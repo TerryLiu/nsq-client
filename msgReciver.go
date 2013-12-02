@@ -5,7 +5,6 @@ import (
 	"flag"
 	"github.com/bitly/go-nsq"
 	"github.com/bitly/nsq/util"
-	_ "github.com/lxn/walk/declarative"
 	"log"
 	"os"
 	"os/signal"
@@ -33,6 +32,7 @@ func init() {
 type MsgReceiver struct {
 	topic    string
 	channel  string
+	usr      User
 	msgChan  chan *ReciveMsg
 	ExitChan chan int
 }
@@ -62,13 +62,14 @@ func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupC
 	}
 }
 
-func NewMsgReceiver(_topic, _channel string, _msgChan chan *ReciveMsg) (*MsgReceiver, error) {
-	if _topic == "" || _channel == "" {
+func NewMsgReceiver(_topic string, _usr User, _msgChan chan *ReciveMsg) (*MsgReceiver, error) {
+	if _topic == "" || _usr.Id == "" {
 		log.Fatalf("topic and channel are required")
 	}
 	receiver := &MsgReceiver{
 		topic:   _topic,
-		channel: _channel,
+		usr:     _usr,
+		channel: _usr.Id,
 		msgChan: _msgChan,
 	}
 	return receiver, nil
