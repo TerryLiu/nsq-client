@@ -15,12 +15,10 @@ type UsrModel struct {
 }
 
 func NewUsrModel() *UsrModel {
-	ids := [6]string{"29830845", "18926950", "44070964", "286258251", "368117356", "369036345"}
-	nicks := [6]string{"豆子/circle", "柯男", "nix", "顽石", "nic", "鹄"}
+	m := &UsrModel{items: make([]UsrItem, len(UserMgr.Users))}
 
-	m := &UsrModel{items: make([]UsrItem, len(ids))}
-	for i := 0; i < len(ids); i++ {
-		m.items[i] = UsrItem{ids[i], nicks[i]}
+	for i, usr := range UserMgr.Users {
+		m.items[i] = UsrItem{usr.Id, usr.Nick}
 	}
 	return m
 }

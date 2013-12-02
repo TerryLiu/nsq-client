@@ -11,7 +11,7 @@ type ChatWindow struct {
 	usrModel *UsrModel
 	msgModel *MsgModel
 	usrList  *walk.ListBox
-	chatView *LogView
+	chatView *ChatMsgView
 	msgEdit  *walk.TextEdit
 	sendBtn  *walk.PushButton
 }
@@ -44,7 +44,7 @@ func NewChatWindow() {
 	mw.msgEdit.SetY(310)
 	mw.msgEdit.SetReadOnly(false)
 
-	chatView, _ := NewLogView(mw)
+	chatView, _ := NewChatMsgView(mw)
 	mw.chatView = chatView
 	mw.chatView.SetSize(walk.Size{500, 300})
 	mw.chatView.SetX(120)
@@ -79,7 +79,7 @@ func (mw *ChatWindow) userlist_CurrentIndexChanged() {
 func (mw *ChatWindow) userlist_ItemActivated() {
 	value := mw.usrModel.items[mw.usrList.CurrentIndex()].nick
 
-	walk.MsgBox(mw, "Value", value, walk.MsgBoxIconInformation)
+	walk.MsgBox(mw, "单聊:"+value, "单聊功能正在开发中...", walk.MsgBoxIconInformation)
 }
 
 func (mw *ChatWindow) sendBtn_OnClick() {

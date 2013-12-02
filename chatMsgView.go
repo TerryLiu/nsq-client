@@ -14,7 +14,7 @@ import (
 	"github.com/lxn/win"
 )
 
-type LogView struct {
+type ChatMsgView struct {
 	walk.WidgetBase
 	logChan chan string
 }
@@ -23,9 +23,9 @@ const (
 	TEM_APPENDTEXT = win.WM_USER + 6
 )
 
-func NewLogView(parent walk.Container) (*LogView, error) {
+func NewChatMsgView(parent walk.Container) (*ChatMsgView, error) {
 	lc := make(chan string, 1024)
-	lv := &LogView{logChan: lc}
+	lv := &ChatMsgView{logChan: lc}
 
 	if err := walk.InitWidget(
 		lv,
@@ -40,33 +40,33 @@ func NewLogView(parent walk.Container) (*LogView, error) {
 	return lv, nil
 }
 
-func (*LogView) LayoutFlags() walk.LayoutFlags {
+func (*ChatMsgView) LayoutFlags() walk.LayoutFlags {
 	return walk.ShrinkableHorz | walk.ShrinkableVert | walk.GrowableHorz | walk.GrowableVert | walk.GreedyHorz | walk.GreedyVert
 }
 
-func (*LogView) MinSizeHint() walk.Size {
+func (*ChatMsgView) MinSizeHint() walk.Size {
 	return walk.Size{20, 12}
 }
 
-func (*LogView) SizeHint() walk.Size {
+func (*ChatMsgView) SizeHint() walk.Size {
 	return walk.Size{100, 100}
 }
 
-func (lv *LogView) setTextSelection(start, end int) {
+func (lv *ChatMsgView) setTextSelection(start, end int) {
 	lv.SendMessage(win.EM_SETSEL, uintptr(start), uintptr(end))
 }
 
-func (lv *LogView) textLength() int {
+func (lv *ChatMsgView) textLength() int {
 	return int(lv.SendMessage(0x000E, uintptr(0), uintptr(0)))
 }
 
-func (lv *LogView) AppendText(value string) {
+func (lv *ChatMsgView) AppendText(value string) {
 	textLength := lv.textLength()
 	lv.setTextSelection(textLength, textLength)
 	lv.SendMessage(win.EM_REPLACESEL, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(value))))
 }
 
-func (lv *LogView) setReadOnly(readOnly bool) error {
+func (lv *ChatMsgView) setReadOnly(readOnly bool) error {
 	if 0 == lv.SendMessage(win.EM_SETREADONLY, uintptr(win.BoolToBOOL(readOnly)), 0) {
 		return errors.New("fail to call EM_SETREADONLY")
 	}
@@ -74,23 +74,23 @@ func (lv *LogView) setReadOnly(readOnly bool) error {
 	return nil
 }
 
-func (lv *LogView) PostAppendText(value string) {
+func (lv *ChatMsgView) PostAppendText(value string) {
 	lv.logChan <- value
 	win.PostMessage(lv.Handle(), TEM_APPENDTEXT, 0, 0)
 }
 
-func (lv *LogView) PostAppendTextln(value string) {
+func (lv *ChatMsgView) PostAppendTextln(value string) {
 	value = value + "\r\n"
 	lv.logChan <- value
 	win.PostMessage(lv.Handle(), TEM_APPENDTEXT, 0, 0)
 }
 
-func (lv *LogView) Write(p []byte) (int, error) {
+func (lv *ChatMsgView) Write(p []byte) (int, error) {
 	lv.PostAppendText(string(p) + "\r\n")
 	return len(p), nil
 }
 
-func (lv *LogView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+func (lv *ChatMsgView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	switch msg {
 	case win.WM_GETDLGCODE:
 		if wParam == win.VK_RETURN {
