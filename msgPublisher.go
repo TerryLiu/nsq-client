@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/bitly/go-nsq"
 )
 
@@ -20,7 +21,13 @@ func NewMsgPublisher(_topic string, _usr User) (*MsgPublisher, error) {
 }
 
 func (mp *MsgPublisher) Publish(msg string) (int32, []byte, error) {
-	return mp.writer.Publish(mp.topic, []byte(msg))
+	m := ChatMessage{
+		UsrId:   mp.usr.Id,
+		UsrName: mp.usr.Nick,
+		MsgBody: msg,
+	}
+	msgBytes, _ := json.Marshal(m)
+	return mp.writer.Publish(mp.topic, msgBytes)
 }
 
 func (mp *MsgPublisher) PublishAsync(msg string, responseChan chan *nsq.WriterTransaction) error {

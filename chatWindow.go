@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/bitly/go-nsq"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -11,7 +12,6 @@ import (
 type ChatWindow struct {
 	*walk.MainWindow
 	usrModel     *UsrModel
-	msgModel     *MsgModel
 	usrList      *walk.ListBox
 	chatView     *ChatMsgView
 	msgEdit      *walk.TextEdit
@@ -28,7 +28,6 @@ func NewChatWindow(usr User) {
 	mw := &ChatWindow{
 		MainWindow: myWindow,
 		usrModel:   NewUsrModel(),
-		msgModel:   NewMsgModel(),
 	}
 
 	mw.SetTitle("简易群聊：" + usr.Nick)
@@ -68,9 +67,6 @@ func NewChatWindow(usr User) {
 	mw.SetMinMaxSize(walk.Size{645, 500}, walk.Size{645, 500})
 	mw.SetSize(walk.Size{645, 500})
 
-	mw.chatView.PostAppendTextln("nxx:")
-	mw.chatView.PostAppendTextln("121342132")
-
 	go mw.MainWindow.Run()
 
 	mw.msgChan = make(chan *ReciveMsg, 1)
@@ -106,10 +102,14 @@ func (mw *ChatWindow) msgRouter() {
 	for {
 		select {
 		case m := <-mw.msgChan:
-			id := string(m.Id[:])
-			body := string(m.Body[:])
-			log.Printf("msgRouter, id = %s, body = %s", id, body)
-			mw.chatView.PostAppendTextln(body)
+			log.Printf("msgRouter, id = %s, body = %s", string(m.Id[:]), string(m.Body[:]))
+
+			var chatMsg ChatMessage
+			err := json.Unmarshal(m.Body, &chatMsg)
+			if err == nil {
+				mw.chatView.PostAppendTextln(chatMsg.UsrName + ":")
+				mw.chatView.PostAppendTextln("  " + chatMsg.MsgBody)
+			}
 			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
 		}
 	}
