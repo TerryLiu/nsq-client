@@ -16,7 +16,7 @@ type ChatWindow struct {
 	sendBtn  *walk.PushButton
 }
 
-func NewChatWindow() {
+func NewChatWindow(usr User) {
 	walk.SetPanicOnError(true)
 	myWindow, _ := walk.NewMainWindow()
 
@@ -66,7 +66,8 @@ func NewChatWindow() {
 	mw.chatView.PostAppendTextln("nxx:")
 	mw.chatView.PostAppendTextln("121342132")
 
-	mw.MainWindow.Run()
+	go mw.MainWindow.Run()
+	go StartReceiver("imtech", usr.Id)
 }
 
 func (mw *ChatWindow) userlist_CurrentIndexChanged() {

@@ -57,14 +57,14 @@ func init() {
 	}
 }
 
-func (usrManage *userManage) IsUserAndPwdValid(usrId, pwd string) bool {
+func (usrManage *userManage) IsUserValid(usrId, pwd string) (User, bool) {
 	if strings.EqualFold(usrId, "") || strings.EqualFold(pwd, "") {
-		return false
+		return User{}, false
 	}
 	for _, usr := range usrManage.Users {
-		if strings.EqualFold(usr.Id, usrId) {
-			return strings.EqualFold(usr.Pwd, pwd)
+		if strings.EqualFold(usr.Id, usrId) && strings.EqualFold(usr.Pwd, pwd) {
+			return usr, true
 		}
 	}
-	return false
+	return User{}, false
 }
