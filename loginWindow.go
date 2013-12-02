@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	//"log"
+	"os"
 )
 
 type LoginWindow struct {
@@ -61,6 +61,7 @@ func NewLoginWindow() {
 	mw.SetMinMaxSize(walk.Size{300, 150}, walk.Size{})
 	mw.SetSize(walk.Size{300, 150})
 	mw.Run()
+	os.Exit(0)
 }
 
 func (mw *LoginWindow) loginBtn_OnClick() {
@@ -69,8 +70,8 @@ func (mw *LoginWindow) loginBtn_OnClick() {
 		mw.onError("用户名或密码不正确！")
 		return
 	}
-	NewChatWindow(usr)
 	mw.MainWindow.SetVisible(false)
+	NewChatWindow(usr)
 }
 
 func (mw *LoginWindow) onKeyDown(key walk.Key) {
@@ -82,8 +83,8 @@ func (mw *LoginWindow) onKeyDown(key walk.Key) {
 			mw.onError("用户名或密码不正确！")
 			return
 		}
-		NewChatWindow(usr)
 		mw.MainWindow.SetVisible(false)
+		NewChatWindow(usr)
 	default:
 	}
 }

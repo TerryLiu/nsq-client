@@ -67,10 +67,11 @@ func NewMsgReceiver(_topic string, _usr User, _msgChan chan *ReciveMsg) (*MsgRec
 		log.Fatalf("topic and channel are required")
 	}
 	receiver := &MsgReceiver{
-		topic:   _topic,
-		usr:     _usr,
-		channel: _usr.Id,
-		msgChan: _msgChan,
+		topic:    _topic,
+		usr:      _usr,
+		channel:  _usr.Id,
+		msgChan:  _msgChan,
+		ExitChan: make(chan int),
 	}
 	return receiver, nil
 }
@@ -119,4 +120,8 @@ func (receiver *MsgReceiver) StartReceiver() {
 	signal.Notify(hupChan, syscall.SIGHUP)
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
 	receiver.router(r, termChan, hupChan)
+}
+
+func (r *MsgReceiver) Stop() {
+	r.ExitChan <- 1
 }

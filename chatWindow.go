@@ -6,6 +6,7 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -64,16 +65,20 @@ func NewChatWindow(usr User) {
 
 	mw.MainWindow.Show()
 
+	mw.msgEdit.SetFocus()
 	mw.SetMinMaxSize(walk.Size{645, 500}, walk.Size{645, 500})
 	mw.SetSize(walk.Size{645, 500})
-
-	go mw.MainWindow.Run()
 
 	mw.msgChan = make(chan *ReciveMsg, 1)
 	mw.msgReciver, _ = NewMsgReceiver("imtech", usr, mw.msgChan)
 	mw.msgPublisher, _ = NewMsgPublisher("imtech", usr)
 	go mw.msgReciver.StartReceiver()
 	go mw.msgRouter()
+
+	mw.MainWindow.Run()
+	mw.msgPublisher.Stop()
+	os.Exit(0)
+
 }
 
 func (mw *ChatWindow) userlist_CurrentIndexChanged() {
