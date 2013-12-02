@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"github.com/bitly/go-nsq"
 	"github.com/bitly/nsq/util"
 	"log"
@@ -12,20 +11,21 @@ import (
 )
 
 var (
-	showVersion           = flag.Bool("version", false, "print version string")
-	hostIdentifier        = flag.String("host-identifier", "", "value to output in log filename in place of hostname. <SHORT_HOST> and <HOSTNAME> are valid replacement tokens")
-	maxInFlight           = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
-	verbose               = flag.Bool("verbose", false, "verbose logging")
-	skipEmptyFiles        = flag.Bool("skip-empty-files", false, "Skip writting empty files")
+	maxInFlight           int
+	verbose               bool
+	skipEmptyFiles        bool
+	tlsEnabled            bool
+	tlsInsecureSkipVerify bool
 	nsqdTCPAddrs          = util.StringArray{}
 	lookupdHTTPAddrs      = util.StringArray{}
-	tlsEnabled            = flag.Bool("tls", false, "enable TLS")
-	tlsInsecureSkipVerify = flag.Bool("tls-insecure-skip-verify", false, "disable TLS server certificate validation")
 )
 
 func init() {
-	flag.Var(&nsqdTCPAddrs, "nsqd-tcp-address", "nsqd TCP address (may be given multiple times)")
-	flag.Var(&lookupdHTTPAddrs, "lookupd-http-address", "lookupd HTTP address (may be given multiple times)")
+	maxInFlight = 1000
+	verbose = true
+	skipEmptyFiles = false
+	tlsEnabled = false
+	tlsInsecureSkipVerify = false
 	lookupdHTTPAddrs.Set("106.186.31.48:4161")
 }
 
@@ -87,13 +87,13 @@ func (receiver *MsgReceiver) StartReceiver() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	r.SetMaxInFlight(*maxInFlight)
-	r.VerboseLogging = *verbose
+	r.SetMaxInFlight(maxInFlight)
+	r.VerboseLogging = verbose
 
-	if *tlsEnabled {
+	if tlsEnabled {
 		r.TLSv1 = true
 		r.TLSConfig = &tls.Config{
-			InsecureSkipVerify: *tlsInsecureSkipVerify,
+			InsecureSkipVerify: tlsInsecureSkipVerify,
 		}
 	}
 
