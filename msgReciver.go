@@ -58,13 +58,14 @@ func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupC
 		case <-hupChan:
 			r.Stop()
 			return
-		case m := <-receiver.msgChan:
-			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
 		}
 	}
 }
 
 func NewMsgReceiver(_topic, _channel string, _msgChan chan *Message) (*MsgReceiver, error) {
+	if _topic == "" || _channel == "" {
+		log.Fatalf("topic and channel are required")
+	}
 	receiver := &MsgReceiver{
 		topic:   _topic,
 		channel: _channel,
@@ -73,17 +74,7 @@ func NewMsgReceiver(_topic, _channel string, _msgChan chan *Message) (*MsgReceiv
 	return receiver, nil
 }
 
-func StartReceiver(topic, channel string, msgChan chan *Message) {
-	receiver, err := NewMsgReceiver(topic, channel, msgChan)
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	if topic == "" || channel == "" {
-		log.Fatalf("--topic and --channel are required")
-	}
-
+func (receiver *MsgReceiver) StartReceiver() {
 	if len(nsqdTCPAddrs) == 0 && len(lookupdHTTPAddrs) == 0 {
 		log.Fatalf("--nsqd-tcp-address or --lookupd-http-address required.")
 	}

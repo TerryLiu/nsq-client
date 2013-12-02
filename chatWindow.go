@@ -10,13 +10,14 @@ import (
 
 type ChatWindow struct {
 	*walk.MainWindow
-	usrModel *UsrModel
-	msgModel *MsgModel
-	usrList  *walk.ListBox
-	chatView *ChatMsgView
-	msgEdit  *walk.TextEdit
-	sendBtn  *walk.PushButton
-	msgChan  chan *Message
+	usrModel   *UsrModel
+	msgModel   *MsgModel
+	usrList    *walk.ListBox
+	chatView   *ChatMsgView
+	msgEdit    *walk.TextEdit
+	sendBtn    *walk.PushButton
+	msgChan    chan *Message
+	msgReciver *MsgReceiver
 }
 
 func NewChatWindow(usr User) {
@@ -29,7 +30,7 @@ func NewChatWindow(usr User) {
 		msgModel:   NewMsgModel(),
 	}
 
-	mw.SetTitle("nsq client")
+	mw.SetTitle("简易群聊：" + usr.Nick)
 
 	usrList, _ := walk.NewListBox(mw)
 	mw.usrList = usrList
@@ -72,7 +73,8 @@ func NewChatWindow(usr User) {
 	go mw.MainWindow.Run()
 
 	mw.msgChan = make(chan *Message, 1)
-	go StartReceiver("imtech", usr.Id, mw.msgChan)
+	mw.msgReciver, _ = NewMsgReceiver("imtech", usr.Id, mw.msgChan)
+	go mw.msgReciver.StartReceiver()
 	go mw.msgRouter()
 }
 
