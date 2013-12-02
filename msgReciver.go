@@ -33,17 +33,17 @@ func init() {
 type MsgReceiver struct {
 	topic    string
 	channel  string
-	msgChan  chan *Message
+	msgChan  chan *ReciveMsg
 	ExitChan chan int
 }
 
-type Message struct {
+type ReciveMsg struct {
 	*nsq.Message
 	returnChannel chan *nsq.FinishedMessage
 }
 
 func (receiver *MsgReceiver) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	receiver.msgChan <- &Message{m, responseChannel}
+	receiver.msgChan <- &ReciveMsg{m, responseChannel}
 }
 
 func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupChan chan os.Signal) {
@@ -62,7 +62,7 @@ func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupC
 	}
 }
 
-func NewMsgReceiver(_topic, _channel string, _msgChan chan *Message) (*MsgReceiver, error) {
+func NewMsgReceiver(_topic, _channel string, _msgChan chan *ReciveMsg) (*MsgReceiver, error) {
 	if _topic == "" || _channel == "" {
 		log.Fatalf("topic and channel are required")
 	}

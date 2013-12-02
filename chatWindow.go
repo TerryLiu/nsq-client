@@ -16,7 +16,7 @@ type ChatWindow struct {
 	chatView   *ChatMsgView
 	msgEdit    *walk.TextEdit
 	sendBtn    *walk.PushButton
-	msgChan    chan *Message
+	msgChan    chan *ReciveMsg
 	msgReciver *MsgReceiver
 }
 
@@ -72,7 +72,7 @@ func NewChatWindow(usr User) {
 
 	go mw.MainWindow.Run()
 
-	mw.msgChan = make(chan *Message, 1)
+	mw.msgChan = make(chan *ReciveMsg, 1)
 	mw.msgReciver, _ = NewMsgReceiver("imtech", usr.Id, mw.msgChan)
 	go mw.msgReciver.StartReceiver()
 	go mw.msgRouter()
