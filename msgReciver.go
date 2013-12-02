@@ -43,44 +43,38 @@ type Message struct {
 }
 
 func (receiver *MsgReceiver) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	id := string(m.Id[:])
-	body := string(m.Body[:])
-	log.Printf("HandleMessage, id = %s, body = %s", id, body)
 	receiver.msgChan <- &Message{m, responseChannel}
 }
 
 func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupChan chan os.Signal) {
-	exit := false
 	for {
 		select {
 		case <-r.ExitChan:
-			exit = true
+			r.Stop()
+			return
 		case <-termChan:
 			r.Stop()
+			return
 		case <-hupChan:
-
+			r.Stop()
+			return
 		case m := <-receiver.msgChan:
 			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
-		}
-		if exit {
-			close(receiver.ExitChan)
-			break
 		}
 	}
 }
 
-func NewMsgReceiver(_topic, _channel string) (*MsgReceiver, error) {
+func NewMsgReceiver(_topic, _channel string, _msgChan chan *Message) (*MsgReceiver, error) {
 	receiver := &MsgReceiver{
-		topic:    _topic,
-		channel:  _channel,
-		msgChan:  make(chan *Message, 1),
-		ExitChan: make(chan int),
+		topic:   _topic,
+		channel: _channel,
+		msgChan: _msgChan,
 	}
 	return receiver, nil
 }
 
-func StartReceiver(topic, channel string) {
-	receiver, err := NewMsgReceiver(topic, channel)
+func StartReceiver(topic, channel string, msgChan chan *Message) {
+	receiver, err := NewMsgReceiver(topic, channel, msgChan)
 
 	if err != nil {
 		log.Fatal(err.Error())

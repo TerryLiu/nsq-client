@@ -1,9 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"github.com/bitly/go-nsq"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"log"
+	"strings"
 )
 
 type ChatWindow struct {
@@ -14,6 +16,7 @@ type ChatWindow struct {
 	chatView *ChatMsgView
 	msgEdit  *walk.TextEdit
 	sendBtn  *walk.PushButton
+	msgChan  chan *Message
 }
 
 func NewChatWindow(usr User) {
@@ -67,14 +70,17 @@ func NewChatWindow(usr User) {
 	mw.chatView.PostAppendTextln("121342132")
 
 	go mw.MainWindow.Run()
-	go StartReceiver("imtech", usr.Id)
+
+	mw.msgChan = make(chan *Message, 1)
+	go StartReceiver("imtech", usr.Id, mw.msgChan)
+	go mw.msgRouter()
 }
 
 func (mw *ChatWindow) userlist_CurrentIndexChanged() {
 	i := mw.usrList.CurrentIndex()
 	item := &mw.usrModel.items[i]
-	fmt.Println("CurrentIndex: ", i)
-	fmt.Println("CurrentName: ", item.nick)
+	log.Println("CurrentIndex: ", i)
+	log.Println("CurrentName: ", item.nick)
 }
 
 func (mw *ChatWindow) userlist_ItemActivated() {
@@ -85,6 +91,21 @@ func (mw *ChatWindow) userlist_ItemActivated() {
 
 func (mw *ChatWindow) sendBtn_OnClick() {
 	text := mw.msgEdit.Text()
-	mw.chatView.PostAppendTextln(text)
+	if strings.EqualFold(text, "") {
+		return
+	}
 	mw.msgEdit.SetText("")
+}
+
+func (mw *ChatWindow) msgRouter() {
+	for {
+		select {
+		case m := <-mw.msgChan:
+			id := string(m.Id[:])
+			body := string(m.Body[:])
+			log.Printf("msgRouter, id = %s, body = %s", id, body)
+			mw.chatView.PostAppendTextln(body)
+			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
+		}
+	}
 }
