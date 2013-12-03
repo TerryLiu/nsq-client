@@ -17,8 +17,7 @@ type ChatWindow struct {
 	chatView     *ChatMsgView
 	msgEdit      *walk.TextEdit
 	sendBtn      *walk.PushButton
-	msgChan      chan *ReciveMsg
-	msgReciver   *MsgReceiver
+	msgHandler   *MsgHandler
 	msgPublisher *MsgPublisher
 }
 
@@ -69,11 +68,15 @@ func NewChatWindow(usr User) {
 	mw.SetMinMaxSize(walk.Size{645, 500}, walk.Size{645, 500})
 	mw.SetSize(walk.Size{645, 500})
 
-	mw.msgChan = make(chan *ReciveMsg, 1)
-	mw.msgReciver, _ = NewMsgReceiver("imtech", usr, mw.msgChan)
+	mw.msgHandler = &MsgHandler{
+		topic:   "imtech",
+		channel: usr.Id,
+		msgChan: make(chan *NsqMsg, 1),
+	}
 	mw.msgPublisher, _ = NewMsgPublisher(usr)
-	go mw.msgReciver.StartReceiver()
+	go Receiver.StartReceiver()
 	go mw.msgRouter()
+	go Receiver.AddMsgHandler("imtech", usr.Id, mw.msgHandler)
 
 	mw.MainWindow.Run()
 	mw.msgPublisher.Stop()
@@ -106,7 +109,7 @@ func (mw *ChatWindow) sendBtn_OnClick() {
 func (mw *ChatWindow) msgRouter() {
 	for {
 		select {
-		case m := <-mw.msgChan:
+		case m := <-mw.msgHandler.msgChan:
 			log.Printf("msgRouter, id = %s, body = %s", string(m.Id[:]), string(m.Body[:]))
 
 			var chatMsg Message

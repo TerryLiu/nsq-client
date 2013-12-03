@@ -11,75 +11,57 @@ import (
 )
 
 var (
-	maxInFlight           int  = 1000
-	verbose               bool = true
-	skipEmptyFiles        bool = false
-	tlsEnabled            bool = false
-	tlsInsecureSkipVerify bool = false
-	nsqdTCPAddrs               = util.StringArray{}
-	lookupdHTTPAddrs           = util.StringArray{}
+	maxInFlight           = 1000
+	verbose               = true
+	skipEmptyFiles        = false
+	tlsEnabled            = false
+	tlsInsecureSkipVerify = false
+	nsqdTCPAddrs          = util.StringArray{}
+	lookupdHTTPAddrs      = util.StringArray{}
+	Receiver              *MsgReceiver
 )
 
 func init() {
 	lookupdHTTPAddrs.Set("106.186.31.48:4161")
+	Receiver = &MsgReceiver{
+		ExitChan: make(chan int),
+	}
 }
 
 type MsgReceiver struct {
-	topic    string
-	channel  string
-	usr      User
-	msgChan  chan *ReciveMsg
-	ExitChan chan int
+	usr        User
+	msgHandler *MsgHandler
+	ExitChan   chan int
 }
 
-type ReciveMsg struct {
-	*nsq.Message
-	returnChannel chan *nsq.FinishedMessage
-}
-
-func (receiver *MsgReceiver) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	receiver.msgChan <- &ReciveMsg{m, responseChannel}
-}
-
-func (receiver *MsgReceiver) router(r *nsq.Reader, termChan chan os.Signal, hupChan chan os.Signal) {
+func (r *MsgReceiver) router(termChan chan os.Signal, hupChan chan os.Signal) {
 	for {
 		select {
 		case <-r.ExitChan:
-			r.Stop()
+			//r.Stop()
 			return
 		case <-termChan:
-			r.Stop()
+			//r.Stop()
 			return
 		case <-hupChan:
-			r.Stop()
+			//r.Stop()
 			return
 		}
 	}
 }
 
-func NewMsgReceiver(_topic string, _usr User, _msgChan chan *ReciveMsg) (*MsgReceiver, error) {
-	if _topic == "" || _usr.Id == "" {
-		log.Fatalf("topic and channel are required")
+func (receiver *MsgReceiver) SetLoginUsr(_usr User) error {
+	if Receiver == nil {
+		Receiver = &MsgReceiver{
+			ExitChan: make(chan int),
+		}
 	}
-	receiver := &MsgReceiver{
-		topic:    _topic,
-		usr:      _usr,
-		channel:  _usr.Id,
-		msgChan:  _msgChan,
-		ExitChan: make(chan int),
-	}
-	return receiver, nil
+	Receiver.usr = _usr
+	return nil
 }
 
-func (receiver *MsgReceiver) StartReceiver() {
-	if len(nsqdTCPAddrs) == 0 && len(lookupdHTTPAddrs) == 0 {
-		log.Fatalf("--nsqd-tcp-address or --lookupd-http-address required.")
-	}
-	if len(nsqdTCPAddrs) != 0 && len(lookupdHTTPAddrs) != 0 {
-		log.Fatalf("use --nsqd-tcp-address or --lookupd-http-address not both")
-	}
-
-	r, err := nsq.NewReader(receiver.topic, receiver.channel)
+func (receiver *MsgReceiver) AddMsgHandler(topic, channel string, msgHandler *MsgHandler) {
+	r, err := nsq.NewReader(topic, channel)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -93,7 +75,7 @@ func (receiver *MsgReceiver) StartReceiver() {
 		}
 	}
 
-	r.AddAsyncHandler(receiver)
+	r.AddAsyncHandler(msgHandler)
 
 	for _, addrString := range nsqdTCPAddrs {
 		err := r.ConnectToNSQ(addrString)
@@ -109,12 +91,14 @@ func (receiver *MsgReceiver) StartReceiver() {
 			log.Fatalf(err.Error())
 		}
 	}
+}
 
+func (receiver *MsgReceiver) StartReceiver() {
 	hupChan := make(chan os.Signal, 1)
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(hupChan, syscall.SIGHUP)
 	signal.Notify(termChan, syscall.SIGINT, syscall.SIGTERM)
-	receiver.router(r, termChan, hupChan)
+	receiver.router(termChan, hupChan)
 }
 
 func (r *MsgReceiver) Stop() {

@@ -65,28 +65,27 @@ func NewLoginWindow() {
 }
 
 func (mw *LoginWindow) loginBtn_OnClick() {
-	usr, ok := UserMgr.IsUserValid(mw.userEdit.Text(), mw.pwdEdit.Text())
-	if !ok {
-		mw.onError("用户名或密码不正确！")
-		return
-	}
-	mw.MainWindow.SetVisible(false)
-	NewChatWindow(usr)
+	mw.gotoChat()
 }
 
 func (mw *LoginWindow) onKeyDown(key walk.Key) {
 
 	switch key {
 	case walk.KeyReturn:
-		usr, ok := UserMgr.IsUserValid(mw.userEdit.Text(), mw.pwdEdit.Text())
-		if !ok {
-			mw.onError("用户名或密码不正确！")
-			return
-		}
-		mw.MainWindow.SetVisible(false)
-		NewChatWindow(usr)
+		mw.gotoChat()
 	default:
 	}
+}
+
+func (mw *LoginWindow) gotoChat() {
+	usr, ok := UserMgr.IsUserValid(mw.userEdit.Text(), mw.pwdEdit.Text())
+	if !ok {
+		mw.onError("用户名或密码不正确！")
+		return
+	}
+	Receiver.SetLoginUsr(usr)
+	mw.MainWindow.SetVisible(false)
+	NewChatWindow(usr)
 }
 
 func (mw *LoginWindow) onError(msg string) {
