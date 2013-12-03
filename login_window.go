@@ -84,6 +84,7 @@ func (mw *LoginWindow) gotoChat() {
 		return
 	}
 	Receiver.SetLoginUsr(usr)
+	Publisher.SetLoginUsr(usr)
 	mw.MainWindow.SetVisible(false)
 	NewChatWindow(usr)
 }

@@ -60,8 +60,8 @@ func (receiver *MsgReceiver) SetLoginUsr(_usr User) error {
 	return nil
 }
 
-func (receiver *MsgReceiver) AddMsgHandler(topic, channel string, msgHandler *MsgHandler) {
-	r, err := nsq.NewReader(topic, channel)
+func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
+	r, err := nsq.NewReader(msgHandler.topic, msgHandler.channel)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

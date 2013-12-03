@@ -6,20 +6,32 @@ import (
 	"log"
 )
 
+var (
+	Publisher *MsgPublisher
+)
+
 type MsgPublisher struct {
 	usr    User
 	writer *nsq.Writer
 }
 
-func NewMsgPublisher(_usr User) (*MsgPublisher, error) {
-	msgPublisher := &MsgPublisher{
-		usr:    _usr,
+func init() {
+	Publisher = &MsgPublisher{
 		writer: nsq.NewWriter("106.186.31.48:4150"),
 	}
-	return msgPublisher, nil
 }
 
-func (mp *MsgPublisher) Publish(topic, msg string) (int32, []byte, error) {
+func (publisher *MsgPublisher) SetLoginUsr(_usr User) error {
+	if Publisher == nil {
+		Publisher = &MsgPublisher{
+			writer: nsq.NewWriter("106.186.31.48:4150"),
+		}
+	}
+	Publisher.usr = _usr
+	return nil
+}
+
+func (mp *MsgPublisher) Write(topic, msg string) (int32, []byte, error) {
 	m := Message{
 		Topic: topic,
 		Type:  MSG_TYPE_CHAT,
@@ -33,7 +45,7 @@ func (mp *MsgPublisher) Publish(topic, msg string) (int32, []byte, error) {
 	return mp.writer.Publish(topic, msgBytes)
 }
 
-func (mp *MsgPublisher) PublishAsync(topic, msg string, responseChan chan *nsq.WriterTransaction) error {
+func (mp *MsgPublisher) WriteAsync(topic, msg string, responseChan chan *nsq.WriterTransaction) error {
 	m := Message{
 		Topic: topic,
 		Type:  MSG_TYPE_CHAT,

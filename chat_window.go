@@ -12,13 +12,12 @@ import (
 
 type ChatWindow struct {
 	*walk.MainWindow
-	usrModel     *UsrModel
-	usrList      *walk.ListBox
-	chatView     *ChatMsgView
-	msgEdit      *walk.TextEdit
-	sendBtn      *walk.PushButton
-	msgHandler   *MsgHandler
-	msgPublisher *MsgPublisher
+	usrModel   *UsrModel
+	usrList    *walk.ListBox
+	chatView   *ChatMsgView
+	msgEdit    *walk.TextEdit
+	sendBtn    *walk.PushButton
+	msgHandler *MsgHandler
 }
 
 func NewChatWindow(usr User) {
@@ -73,13 +72,12 @@ func NewChatWindow(usr User) {
 		channel: usr.Id,
 		msgChan: make(chan *NsqMsg, 1),
 	}
-	mw.msgPublisher, _ = NewMsgPublisher(usr)
 	go Receiver.StartReceiver()
 	go mw.msgRouter()
-	go Receiver.AddMsgHandler("imtech", usr.Id, mw.msgHandler)
+	go Receiver.AddMsgHandler(mw.msgHandler)
 
 	mw.MainWindow.Run()
-	mw.msgPublisher.Stop()
+	Publisher.Stop()
 	os.Exit(0)
 
 }
@@ -102,7 +100,7 @@ func (mw *ChatWindow) sendBtn_OnClick() {
 	if strings.EqualFold(text, "") {
 		return
 	}
-	mw.msgPublisher.Publish("imtech", text)
+	Publisher.Write("imtech", text)
 	mw.msgEdit.SetText("")
 }
 

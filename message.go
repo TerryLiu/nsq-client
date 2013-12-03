@@ -5,10 +5,10 @@ import ()
 /*
 消息格式：
 {
-	"topic":"xxx",
+	"Topic":"xxx",
 	"Type":1,
 	"body":{
-		"from":{
+		"From":{
 			"Id":"xxx",
 			"Nick":"xxx",
 		},

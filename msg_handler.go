@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/bitly/go-nsq"
+	"log"
 )
 
 type NsqMsg struct {
@@ -17,5 +18,7 @@ type MsgHandler struct {
 }
 
 func (handler *MsgHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
+	log.Printf("HandleMessage...topic=%s\n", handler.topic)
+	log.Printf("HandleMessage...m.Body=%s\n", string(m.Body))
 	handler.msgChan <- &NsqMsg{m, responseChannel}
 }
