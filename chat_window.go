@@ -72,9 +72,8 @@ func NewChatWindow(usr User) {
 		channel: usr.Id,
 		msgChan: make(chan *NsqMsg, 1),
 	}
-	go Receiver.StartReceiver()
-	go mw.msgRouter()
 	go Receiver.AddMsgHandler(mw.msgHandler)
+	go mw.msgRouter()
 
 	mw.MainWindow.Run()
 	Publisher.Stop()

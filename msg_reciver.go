@@ -29,14 +29,19 @@ func init() {
 }
 
 type MsgReceiver struct {
-	usr        User
-	msgHandler *MsgHandler
-	ExitChan   chan int
+	usr           User
+	sysMsgHandler *MsgHandler
+	ExitChan      chan int
 }
 
 func (r *MsgReceiver) router(termChan chan os.Signal, hupChan chan os.Signal) {
 	for {
 		select {
+		case m := <-r.sysMsgHandler.msgChan:
+			log.Println("recevie system message ", string(m.Body))
+			//TODO:
+			//do something when received system messages
+			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
 		case <-r.ExitChan:
 			//r.Stop()
 			return
@@ -94,6 +99,14 @@ func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
 }
 
 func (receiver *MsgReceiver) StartReceiver() {
+
+	receiver.sysMsgHandler = &MsgHandler{
+		topic:   MSG_TOPIC_SYSTEM,
+		channel: receiver.usr.Id,
+		msgChan: make(chan *NsqMsg, 1),
+	}
+
+	receiver.AddMsgHandler(receiver.sysMsgHandler)
 	hupChan := make(chan os.Signal, 1)
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(hupChan, syscall.SIGHUP)

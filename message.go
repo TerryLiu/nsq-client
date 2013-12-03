@@ -16,8 +16,10 @@ import ()
 	}
 }
 */
-
+const MSG_TYPE_SYSTEM = 0
 const MSG_TYPE_CHAT = 1
+
+const MSG_TOPIC_SYSTEM = "__SYSTEM__"
 
 type Message struct {
 	Topic string
