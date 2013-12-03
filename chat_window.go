@@ -71,7 +71,7 @@ func NewChatWindow(usr User) {
 
 	mw.msgChan = make(chan *ReciveMsg, 1)
 	mw.msgReciver, _ = NewMsgReceiver("imtech", usr, mw.msgChan)
-	mw.msgPublisher, _ = NewMsgPublisher("imtech", usr)
+	mw.msgPublisher, _ = NewMsgPublisher(usr)
 	go mw.msgReciver.StartReceiver()
 	go mw.msgRouter()
 
@@ -99,7 +99,7 @@ func (mw *ChatWindow) sendBtn_OnClick() {
 	if strings.EqualFold(text, "") {
 		return
 	}
-	mw.msgPublisher.Publish(text)
+	mw.msgPublisher.Publish("imtech", text)
 	mw.msgEdit.SetText("")
 }
 
@@ -109,11 +109,11 @@ func (mw *ChatWindow) msgRouter() {
 		case m := <-mw.msgChan:
 			log.Printf("msgRouter, id = %s, body = %s", string(m.Id[:]), string(m.Body[:]))
 
-			var chatMsg ChatMessage
+			var chatMsg Message
 			err := json.Unmarshal(m.Body, &chatMsg)
 			if err == nil {
-				mw.chatView.PostAppendTextln(chatMsg.UsrName + ":")
-				mw.chatView.PostAppendTextln("  " + chatMsg.MsgBody)
+				mw.chatView.PostAppendTextln(chatMsg.Body.From.Nick + ":")
+				mw.chatView.PostAppendTextln("  " + chatMsg.Body.Msg)
 			}
 			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}
 		}

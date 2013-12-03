@@ -11,21 +11,16 @@ import (
 )
 
 var (
-	maxInFlight           int
-	verbose               bool
-	skipEmptyFiles        bool
-	tlsEnabled            bool
-	tlsInsecureSkipVerify bool
-	nsqdTCPAddrs          = util.StringArray{}
-	lookupdHTTPAddrs      = util.StringArray{}
+	maxInFlight           int  = 1000
+	verbose               bool = true
+	skipEmptyFiles        bool = false
+	tlsEnabled            bool = false
+	tlsInsecureSkipVerify bool = false
+	nsqdTCPAddrs               = util.StringArray{}
+	lookupdHTTPAddrs           = util.StringArray{}
 )
 
 func init() {
-	maxInFlight = 1000
-	verbose = true
-	skipEmptyFiles = false
-	tlsEnabled = false
-	tlsInsecureSkipVerify = false
 	lookupdHTTPAddrs.Set("106.186.31.48:4161")
 }
 
