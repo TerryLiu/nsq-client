@@ -8,9 +8,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
-type ChatWindow struct {
+type GroupChatWindow struct {
 	*walk.MainWindow
 	usrModel   *UsrModel
 	usrList    *walk.ListBox
@@ -18,18 +19,20 @@ type ChatWindow struct {
 	msgEdit    *walk.TextEdit
 	sendBtn    *walk.PushButton
 	msgHandler *MsgHandler
+	usr        User
 }
 
-func NewChatWindow(usr User) {
+func NewGroupChatWindow(_usr User) {
 	walk.SetPanicOnError(true)
 	myWindow, _ := walk.NewMainWindow()
 
-	mw := &ChatWindow{
+	mw := &GroupChatWindow{
 		MainWindow: myWindow,
+		usr:        _usr,
 		usrModel:   NewUsrModel(),
 	}
 
-	mw.SetTitle("简易群聊：" + usr.Nick)
+	mw.SetTitle("简易群聊：" + _usr.Nick)
 
 	usrList, _ := walk.NewListBox(mw)
 	mw.usrList = usrList
@@ -69,41 +72,44 @@ func NewChatWindow(usr User) {
 
 	mw.msgHandler = &MsgHandler{
 		topic:   "imtech",
-		channel: usr.Id,
+		channel: mw.usr.Id,
 		msgChan: make(chan *NsqMsg, 1),
 	}
 	go Receiver.AddMsgHandler(mw.msgHandler)
 	go mw.msgRouter()
 
 	mw.MainWindow.Run()
+	mw.msgHandler.reader.Stop()
 	Publisher.Stop()
 	os.Exit(0)
 
 }
 
-func (mw *ChatWindow) userlist_CurrentIndexChanged() {
+func (mw *GroupChatWindow) userlist_CurrentIndexChanged() {
 	i := mw.usrList.CurrentIndex()
 	item := &mw.usrModel.items[i]
 	log.Println("CurrentIndex: ", i)
-	log.Println("CurrentName: ", item.nick)
+	log.Println("CurrentName: ", item.Nick)
 }
 
-func (mw *ChatWindow) userlist_ItemActivated() {
-	value := mw.usrModel.items[mw.usrList.CurrentIndex()].nick
-
-	walk.MsgBox(mw, "单聊:"+value, "单聊功能正在开发中...", walk.MsgBoxIconInformation)
+func (mw *GroupChatWindow) userlist_ItemActivated() {
+	partner := mw.usrModel.items[mw.usrList.CurrentIndex()]
+	//walk.MsgBox(mw, "单聊:"+partner.nick, "单聊功能正在开发中...", walk.MsgBoxIconInformation)
+	go NewSingleChatWindow(mw.usr, partner)
 }
 
-func (mw *ChatWindow) sendBtn_OnClick() {
+func (mw *GroupChatWindow) sendBtn_OnClick() {
 	text := mw.msgEdit.Text()
 	if strings.EqualFold(text, "") {
 		return
 	}
+	mw.chatView.PostAppendTextln(mw.usr.Nick + " " + time.Now().Format("2006-01-02 15:04:05") + " :")
+	mw.chatView.PostAppendTextln("  " + text)
 	Publisher.Write("imtech", text)
 	mw.msgEdit.SetText("")
 }
 
-func (mw *ChatWindow) msgRouter() {
+func (mw *GroupChatWindow) msgRouter() {
 	for {
 		select {
 		case m := <-mw.msgHandler.msgChan:
@@ -111,8 +117,8 @@ func (mw *ChatWindow) msgRouter() {
 
 			var chatMsg Message
 			err := json.Unmarshal(m.Body, &chatMsg)
-			if err == nil {
-				mw.chatView.PostAppendTextln(chatMsg.Body.From.Nick + ":")
+			if err == nil && !strings.EqualFold(chatMsg.Body.From.Id, mw.usr.Id) {
+				mw.chatView.PostAppendTextln(chatMsg.Body.From.Nick + " " + chatMsg.Time + " :")
 				mw.chatView.PostAppendTextln("  " + chatMsg.Body.Msg)
 			}
 			m.returnChannel <- &nsq.FinishedMessage{m.Id, 0, true}

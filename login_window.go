@@ -87,7 +87,7 @@ func (mw *LoginWindow) gotoChat() {
 	Publisher.SetLoginUsr(usr)
 	go Receiver.StartReceiver()
 	mw.MainWindow.SetVisible(false)
-	NewChatWindow(usr)
+	NewGroupChatWindow(usr)
 }
 
 func (mw *LoginWindow) onError(msg string) {

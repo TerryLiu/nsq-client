@@ -4,21 +4,16 @@ import (
 	"github.com/lxn/walk"
 )
 
-type UsrItem struct {
-	id   string
-	nick string
-}
-
 type UsrModel struct {
 	walk.ListModelBase
-	items []UsrItem
+	items []User
 }
 
 func NewUsrModel() *UsrModel {
-	m := &UsrModel{items: make([]UsrItem, len(UserMgr.Users))}
+	m := &UsrModel{items: make([]User, len(UserMgr.Users))}
 
 	for i, usr := range UserMgr.Users {
-		m.items[i] = UsrItem{usr.Id, usr.Nick}
+		m.items[i] = usr
 	}
 	return m
 }
@@ -28,5 +23,5 @@ func (m *UsrModel) ItemCount() int {
 }
 
 func (m *UsrModel) Value(index int) interface{} {
-	return m.items[index].nick
+	return m.items[index].Nick
 }

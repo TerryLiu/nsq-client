@@ -15,6 +15,7 @@ type MsgHandler struct {
 	channel string
 	usr     User
 	msgChan chan *NsqMsg
+	reader  *nsq.Reader
 }
 
 func (handler *MsgHandler) HandleMessage(m *nsq.Message, responseChannel chan *nsq.FinishedMessage) {

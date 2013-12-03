@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/bitly/go-nsq"
 	"log"
+	"time"
 )
 
 var (
@@ -35,6 +36,7 @@ func (mp *MsgPublisher) Write(topic, msg string) (int32, []byte, error) {
 	m := Message{
 		Topic: topic,
 		Type:  MSG_TYPE_CHAT,
+		Time:  time.Now().Format("2006-01-02 15:04:05"),
 		Body: MessageBody{
 			From: mp.usr,
 			Msg:  msg,

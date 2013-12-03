@@ -81,6 +81,7 @@ func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
 	}
 
 	r.AddAsyncHandler(msgHandler)
+	msgHandler.reader = r
 
 	for _, addrString := range nsqdTCPAddrs {
 		err := r.ConnectToNSQ(addrString)
