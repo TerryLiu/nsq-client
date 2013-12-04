@@ -29,6 +29,7 @@ func (publisher *MsgPublisher) SetLoginUsr(_usr User) error {
 		}
 	}
 	Publisher.usr = _usr
+	Publisher.usr.Pwd = "xxxx"
 	return nil
 }
 

@@ -13,13 +13,13 @@ import (
 
 type GroupChatWindow struct {
 	*walk.MainWindow
-	usrModel   *UsrModel
-	usrList    *walk.ListBox
-	chatView   *ChatMsgView
-	msgEdit    *walk.TextEdit
-	sendBtn    *walk.PushButton
-	msgHandler *MsgHandler
-	usr        User
+	usrModel *UsrModel
+	usrList  *walk.ListBox
+	chatView *ChatMsgView
+	msgEdit  *walk.TextEdit
+	sendBtn  *walk.PushButton
+	chatMgr  *ChatMgr
+	usr      User
 }
 
 func NewGroupChatWindow(_usr User) {
@@ -70,17 +70,18 @@ func NewGroupChatWindow(_usr User) {
 	mw.SetMinMaxSize(walk.Size{645, 500}, walk.Size{645, 500})
 	mw.SetSize(walk.Size{645, 500})
 
-	mw.msgHandler = &MsgHandler{
+	mw.chatMgr = &ChatMgr{
 		topic:   "imtech",
 		channel: mw.usr.Id,
 		msgChan: make(chan *NsqMsg, 1),
 	}
-	go Receiver.AddMsgHandler(mw.msgHandler)
+	go Receiver.registerMsgHandler(mw.chatMgr)
 	go mw.msgRouter()
 
 	mw.MainWindow.Run()
-	mw.msgHandler.reader.Stop()
+	mw.chatMgr.reader.Stop()
 	Publisher.Stop()
+	pairChatMgr.release()
 	os.Exit(0)
 
 }
@@ -95,7 +96,7 @@ func (mw *GroupChatWindow) userlist_CurrentIndexChanged() {
 func (mw *GroupChatWindow) userlist_ItemActivated() {
 	partner := mw.usrModel.items[mw.usrList.CurrentIndex()]
 	//walk.MsgBox(mw, "单聊:"+partner.nick, "单聊功能正在开发中...", walk.MsgBoxIconInformation)
-	go NewSingleChatWindow(mw.usr, partner)
+	go NewPairChatWindow(mw.usr, partner)
 }
 
 func (mw *GroupChatWindow) sendBtn_OnClick() {
@@ -112,7 +113,7 @@ func (mw *GroupChatWindow) sendBtn_OnClick() {
 func (mw *GroupChatWindow) msgRouter() {
 	for {
 		select {
-		case m := <-mw.msgHandler.msgChan:
+		case m := <-mw.chatMgr.msgChan:
 			log.Printf("msgRouter, id = %s, body = %s", string(m.Id[:]), string(m.Body[:]))
 
 			var chatMsg Message

@@ -30,7 +30,7 @@ func init() {
 
 type MsgReceiver struct {
 	usr           User
-	sysMsgHandler *MsgHandler
+	sysMsgHandler *ChatMgr
 	ExitChan      chan int
 }
 
@@ -65,8 +65,8 @@ func (receiver *MsgReceiver) SetLoginUsr(_usr User) error {
 	return nil
 }
 
-func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
-	r, err := nsq.NewReader(msgHandler.topic, msgHandler.channel)
+func (receiver *MsgReceiver) registerMsgHandler(msgHandler MsgHandler) {
+	r, err := nsq.NewReader(msgHandler.GetTopic(), msgHandler.GetChannel())
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -81,7 +81,7 @@ func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
 	}
 
 	r.AddAsyncHandler(msgHandler)
-	msgHandler.reader = r
+	msgHandler.SetReader(r)
 
 	for _, addrString := range nsqdTCPAddrs {
 		err := r.ConnectToNSQ(addrString)
@@ -101,13 +101,13 @@ func (receiver *MsgReceiver) AddMsgHandler(msgHandler *MsgHandler) {
 
 func (receiver *MsgReceiver) StartReceiver() {
 
-	receiver.sysMsgHandler = &MsgHandler{
+	receiver.sysMsgHandler = &ChatMgr{
 		topic:   MSG_TOPIC_SYSTEM,
 		channel: receiver.usr.Id,
 		msgChan: make(chan *NsqMsg, 1),
 	}
 
-	receiver.AddMsgHandler(receiver.sysMsgHandler)
+	receiver.registerMsgHandler(receiver.sysMsgHandler)
 	hupChan := make(chan os.Signal, 1)
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(hupChan, syscall.SIGHUP)

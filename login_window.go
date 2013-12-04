@@ -85,6 +85,8 @@ func (mw *LoginWindow) gotoChat() {
 	}
 	Receiver.SetLoginUsr(usr)
 	Publisher.SetLoginUsr(usr)
+	pairChatMgr.SetLoginUsr(usr)
+	go Receiver.registerMsgHandler(pairChatMgr)
 	go Receiver.StartReceiver()
 	mw.MainWindow.SetVisible(false)
 	NewGroupChatWindow(usr)
